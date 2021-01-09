@@ -11,17 +11,19 @@ class TimerView extends StatefulWidget {
 }
 
 class _TimerViewState extends State<TimerView> {
-  CountDownController _topTimerController;
-  CountDownController _bottomTimerController;
-  bool isTopTimerActive = true;
-  bool isBottomTimerActive = false;
+  CountDownController _lightTimerController;
+  CountDownController _darkTimerController;
+  bool _isLightTimerActive = true;
+  bool _isDarkTimerActive = false;
+  TimerButtonSound _timerButtonSound;
 
   @override
   void initState() {
     super.initState();
     Wakelock.enable();
-    _topTimerController = CountDownController();
-    _bottomTimerController = CountDownController();
+    _lightTimerController = CountDownController();
+    _darkTimerController = CountDownController();
+    _timerButtonSound = TimerButtonSound();
   }
 
   @override
@@ -30,49 +32,51 @@ class _TimerViewState extends State<TimerView> {
       body: Column(
         children: [
           Expanded(
-            child: _buildTopTimer(context),
+            child: _buildLightTimer(context),
           ),
           Expanded(
-            child: _buildBottomTimer(context),
+            child: _buildDarkTimer(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopTimer(BuildContext context) {
-    final topTimerTheme = _buildTopTimerTheme(context);
+  Widget _buildLightTimer(BuildContext context) {
+    final lightTimerTheme = _buildLightTimerTheme(context);
 
     return Transform.rotate(
       angle: pi,
       child: Timer(
-        isActive: isTopTimerActive,
+        isActive: _isLightTimerActive,
         duration: Duration(minutes: 10),
-        colorTheme: topTimerTheme,
-        controller: _topTimerController,
+        colorTheme: lightTimerTheme,
+        controller: _lightTimerController,
         onTap: _switchActive,
+        sound: _timerButtonSound,
       ),
     );
   }
 
-  Widget _buildBottomTimer(BuildContext context) {
-    final bottomTimerTheme = _buildBottomTimerTheme(context);
+  Widget _buildDarkTimer(BuildContext context) {
+    final darkTimerTheme = _buildDarkTimerTheme(context);
     return Timer(
-      isActive: isBottomTimerActive,
+      isActive: _isDarkTimerActive,
       duration: Duration(minutes: 10),
-      colorTheme: bottomTimerTheme,
-      controller: _bottomTimerController,
+      colorTheme: darkTimerTheme,
+      controller: _darkTimerController,
       onTap: _switchActive,
+      sound: _timerButtonSound,
     );
   }
 
   void _switchActive() {
     setState(() {
-      isTopTimerActive = !isTopTimerActive;
-      isBottomTimerActive = !isBottomTimerActive;
+      _isLightTimerActive = !_isLightTimerActive;
+      _isDarkTimerActive = !_isDarkTimerActive;
 
-      _setTimerActive(_topTimerController, isTopTimerActive);
-      _setTimerActive(_bottomTimerController, isBottomTimerActive);
+      _setTimerActive(_lightTimerController, _isLightTimerActive);
+      _setTimerActive(_darkTimerController, _isDarkTimerActive);
     });
   }
 
@@ -84,7 +88,7 @@ class _TimerViewState extends State<TimerView> {
     }
   }
 
-  TimerTheme _buildTopTimerTheme(BuildContext context) {
+  TimerTheme _buildLightTimerTheme(BuildContext context) {
     final theme = Theme.of(context);
     return TimerTheme(
       enabledButtonColor: theme.primaryColor,
@@ -98,7 +102,7 @@ class _TimerViewState extends State<TimerView> {
     );
   }
 
-  TimerTheme _buildBottomTimerTheme(BuildContext context) {
+  TimerTheme _buildDarkTimerTheme(BuildContext context) {
     final theme = Theme.of(context);
     return TimerTheme(
       enabledButtonColor: Colors.white,

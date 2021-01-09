@@ -1,6 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_sound_lite/flutter_sound_player.dart';
 
+part 'timer_button_sound.dart';
 part 'timer_theme.dart';
 
 class Timer extends StatelessWidget {
@@ -10,6 +15,7 @@ class Timer extends StatelessWidget {
   final CountDownController controller;
   final bool isActive;
   final TimerTheme colorTheme;
+  final TimerButtonSound sound;
 
   Timer({
     Key key,
@@ -18,6 +24,7 @@ class Timer extends StatelessWidget {
     this.onComplete,
     this.controller,
     this.colorTheme,
+    this.sound,
     this.isActive = true,
   }) : super(key: key);
 
@@ -71,7 +78,8 @@ class Timer extends StatelessWidget {
     );
   }
 
-  void _onTap() {
+  Future<void> _onTap() async {
     if (onTap != null) onTap();
+    if (sound != null) sound.play();
   }
 }
