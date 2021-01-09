@@ -1,4 +1,4 @@
-package com.example.chess_timer
+package com.pablanka.chess_timer
 
 import io.flutter.embedding.android.FlutterActivity
 

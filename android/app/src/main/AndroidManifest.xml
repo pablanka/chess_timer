@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.chess_timer">
+    package="com.pablanka.chess_timer">
    <application
-        android:label="chess_timer"
+        android:label="Chess Timer"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
         
