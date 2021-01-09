@@ -9,6 +9,16 @@ class ChessTimerApp extends StatelessWidget {
       title: 'Chess timer',
       theme: ThemeData(
         primaryColor: Palette.primary,
+        accentColor: Palette.secondary,
+        buttonColor: Palette.secondary,
+        primaryTextTheme: TextTheme(
+          button: TextStyle(color: Palette.secondary),
+        ),
+        dialogTheme: DialogTheme(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
       ),
       home: TimerView(),
     );

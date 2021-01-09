@@ -3,13 +3,17 @@ description: Timer for chess matches.
 
 version: 1.0.0+1
 
+publish_to: none
+
 environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  circular_countdown_timer: ^0.0.8
+  circular_countdown_timer:
+    git:
+      url: git://github.com/pablanka/circular_countdown_timer
   cupertino_icons: ^1.0.1
   flutter_sound_lite: 4.0.6
   wakelock: ^0.2.1+1

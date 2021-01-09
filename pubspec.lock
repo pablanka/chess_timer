@@ -32,9 +32,11 @@ packages:
   circular_countdown_timer:
     dependency: "direct main"
     description:
-      name: circular_countdown_timer
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: b85666fadee805e8fb9aa83ccda4bf6b8094057a
+      url: "git://github.com/pablanka/circular_countdown_timer"
+    source: git
     version: "0.0.8"
   clock:
     dependency: transitive
