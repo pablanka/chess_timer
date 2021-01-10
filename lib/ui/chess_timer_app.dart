@@ -11,6 +11,7 @@ class ChessTimerApp extends StatelessWidget {
         primaryColor: Palette.primary,
         accentColor: Palette.secondary,
         buttonColor: Palette.secondary,
+        appBarTheme: AppBarTheme(color: Palette.primary),
         primaryTextTheme: TextTheme(
           button: TextStyle(color: Palette.secondary),
         ),

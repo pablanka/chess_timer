@@ -1,10 +1,14 @@
 import 'dart:math';
 
+import 'package:chess_timer/ui/set_timer_view.dart';
 import 'package:chess_timer/ui/timer_widget.dart';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock/wakelock.dart';
+
+enum MatchStatus { notStarted, inProgress, paused, finished }
+enum TimerType { light, dark }
 
 class TimerView extends StatefulWidget {
   @override
@@ -14,10 +18,9 @@ class TimerView extends StatefulWidget {
 class _TimerViewState extends State<TimerView> {
   CountDownController _lightTimerController;
   CountDownController _darkTimerController;
-  bool _isLightTimerActive = false;
-  bool _isDarkTimerActive = false;
+  MatchStatus _matchStatus = MatchStatus.notStarted;
+  TimerType _activeTimer;
   bool _timersFlipped = false;
-  bool _isStarted = false;
   TimerButtonSound _timerButtonSound;
 
   @override
@@ -61,9 +64,12 @@ class _TimerViewState extends State<TimerView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        if (!_isStarted) _buildFlipTimersButton(),
-        if (!_isStarted) _buildStartButton(),
-        if (_isStarted) _buildStopButton(),
+        if (_matchStatus == MatchStatus.notStarted) _buildFlipTimersButton(),
+        if (_matchStatus == MatchStatus.notStarted) _buildSetTimerButton(),
+        if (_matchStatus == MatchStatus.inProgress) _buildPauseButton(),
+        if (_matchStatus == MatchStatus.inProgress) _buildStopButton(),
+        if (_matchStatus == MatchStatus.paused) _buildResumeButton(),
+        if (_matchStatus == MatchStatus.finished) _buildNewMatchButton(),
       ],
     );
   }
@@ -81,7 +87,7 @@ class _TimerViewState extends State<TimerView> {
 
   Widget _buildStartButton() {
     final theme = Theme.of(context);
-    final size = 70.0;
+    final size = 60.0;
     return Transform.rotate(
       angle: _timersFlipped ? pi : 0,
       child: Container(
@@ -94,7 +100,7 @@ class _TimerViewState extends State<TimerView> {
             color: Colors.white,
             size: size / 2,
           ),
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(0),
           onPressed: _startTimers,
           color: theme.accentColor,
         ),
@@ -108,16 +114,68 @@ class _TimerViewState extends State<TimerView> {
       angle: _timersFlipped ? pi : 0,
       child: RaisedButton(
         shape: CircleBorder(),
-        child: Icon(
-          Icons.stop,
-          color: Colors.white,
-          size: 30,
-        ),
+        child: Icon(Icons.stop, color: Colors.white, size: 30),
         padding: const EdgeInsets.all(10),
         onPressed: _showStopTimersDialog,
         color: theme.accentColor,
       ),
     );
+  }
+
+  Widget _buildPauseButton() {
+    final theme = Theme.of(context);
+    return Transform.rotate(
+      angle: _timersFlipped ? pi : 0,
+      child: RaisedButton(
+        shape: CircleBorder(),
+        child: Icon(Icons.pause, color: Colors.white, size: 30),
+        padding: const EdgeInsets.all(10),
+        onPressed: _pauseTimers,
+        color: theme.accentColor,
+      ),
+    );
+  }
+
+  Widget _buildResumeButton() {
+    final theme = Theme.of(context);
+    return Transform.rotate(
+      angle: _activeTimer == TimerType.light ? pi : 0,
+      child: RaisedButton(
+        shape: CircleBorder(),
+        child: Icon(Icons.play_arrow, color: Colors.white, size: 30),
+        padding: const EdgeInsets.all(10),
+        onPressed: _resume,
+        color: theme.accentColor,
+      ),
+    );
+  }
+
+  Widget _buildSetTimerButton() {
+    final theme = Theme.of(context);
+    return RaisedButton(
+      shape: CircleBorder(),
+      child: Icon(Icons.timer, color: Colors.white),
+      padding: const EdgeInsets.all(10),
+      onPressed: _openSetTimerView,
+      color: theme.accentColor,
+    );
+  }
+
+  Widget _buildNewMatchButton() {
+    final theme = Theme.of(context);
+    return RaisedButton(
+      shape: CircleBorder(),
+      child: Icon(Icons.close, color: Colors.white),
+      padding: const EdgeInsets.all(10),
+      onPressed: _resetTimers,
+      color: theme.accentColor,
+    );
+  }
+
+  void _openSetTimerView() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => SetTimerView(),
+    ));
   }
 
   void _flipTimers() {
@@ -126,15 +184,16 @@ class _TimerViewState extends State<TimerView> {
 
   void _startTimers() {
     setState(() {
-      _isLightTimerActive = true;
-      _isStarted = true;
-      _setTimerActive(_lightTimerController, _isLightTimerActive);
+      _matchStatus = MatchStatus.inProgress;
+      _activeTimer = TimerType.light;
+
+      _setTimerActive(_activeTimer, true);
     });
   }
 
   Future<void> _showStopTimersDialog() async {
     final theme = Theme.of(context);
-    _pauseCurrent();
+    _pauseActive();
     final result = await showDialog<bool>(
       context: context,
       builder: (_) {
@@ -159,31 +218,22 @@ class _TimerViewState extends State<TimerView> {
     if (result == true) {
       _resetTimers();
     } else {
-      _resumeCurrent();
+      _resumeActive();
     }
   }
 
-  void _pauseCurrent() {
-    setState(() {
-      final current =
-          _isLightTimerActive ? _lightTimerController : _darkTimerController;
-      _setTimerActive(current, false);
-    });
+  void _pauseActive() {
+    setState(() => _setTimerActive(_activeTimer, false));
   }
 
-  void _resumeCurrent() {
-    setState(() {
-      final current =
-          _isLightTimerActive ? _lightTimerController : _darkTimerController;
-      _setTimerActive(current, true);
-    });
+  void _resumeActive() {
+    setState(() => _setTimerActive(_activeTimer, true));
   }
 
   void _resetTimers() {
     setState(() {
-      _isLightTimerActive = false;
-      _isDarkTimerActive = false;
-      _isStarted = false;
+      _activeTimer = null;
+      _matchStatus = MatchStatus.notStarted;
       _lightTimerController.restart();
       _lightTimerController.pause();
       _darkTimerController.restart();
@@ -191,45 +241,111 @@ class _TimerViewState extends State<TimerView> {
     });
   }
 
+  void _pauseTimers() {
+    _matchStatus = MatchStatus.paused;
+    _pauseActive();
+  }
+
+  void _resume() {
+    _matchStatus = MatchStatus.inProgress;
+    _resumeActive();
+  }
+
   Widget _buildLightTimer(BuildContext context) {
     final lightTimerTheme = _buildLightTimerTheme(context);
+    final isActive = _isTimerActive(TimerType.light);
 
     return Transform.rotate(
       angle: pi,
       child: Timer(
-        isActive: _isLightTimerActive,
-        duration: Duration(minutes: 10),
+        isActive: isActive,
+        duration: _getMatchDuration(),
         colorTheme: lightTimerTheme,
         controller: _lightTimerController,
         onTap: _switchActive,
         sound: _timerButtonSound,
+        onComplete: _onTimerFinished,
       ),
+    );
+  }
+
+  bool _isTimerActive(TimerType timer) {
+    return _activeTimer == timer &&
+        (_matchStatus == MatchStatus.inProgress ||
+            _matchStatus == MatchStatus.finished);
+  }
+
+  void _onTimerFinished() {
+    setState(() => _matchStatus = MatchStatus.finished);
+
+    _showMatchFinishedDialog();
+  }
+
+  void _showMatchFinishedDialog() {
+    final theme = Theme.of(context);
+    showDialog<bool>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text('Match has finished'),
+          content: Text('Timer is over!'),
+          actions: [
+            RaisedButton(
+              child: Text('OK', style: TextStyle(color: Colors.white)),
+              onPressed: () => Navigator.of(context).pop(),
+              color: theme.accentColor,
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildDarkTimer(BuildContext context) {
     final darkTimerTheme = _buildDarkTimerTheme(context);
-    return Timer(
-      isActive: _isDarkTimerActive,
-      duration: Duration(minutes: 10),
-      controller: _darkTimerController,
-      colorTheme: darkTimerTheme,
-      onTap: _switchActive,
-      sound: _timerButtonSound,
+    final isActive = _isTimerActive(TimerType.dark);
+
+    return Stack(
+      children: [
+        Timer(
+          isActive: isActive,
+          duration: _getMatchDuration(),
+          controller: _darkTimerController,
+          colorTheme: darkTimerTheme,
+          onTap: _switchActive,
+          sound: _timerButtonSound,
+          onComplete: _onTimerFinished,
+        ),
+        if (_matchStatus == MatchStatus.notStarted)
+          Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 25),
+              child: _buildStartButton(),
+            ),
+          ),
+      ],
     );
+  }
+
+  Duration _getMatchDuration() {
+    return Duration(seconds: 5);
   }
 
   void _switchActive() {
     setState(() {
-      _isLightTimerActive = !_isLightTimerActive;
-      _isDarkTimerActive = !_isDarkTimerActive;
-
-      _setTimerActive(_lightTimerController, _isLightTimerActive);
-      _setTimerActive(_darkTimerController, _isDarkTimerActive);
+      _setTimerActive(_activeTimer, false);
+      _activeTimer =
+          _activeTimer == TimerType.light ? TimerType.dark : TimerType.light;
+      _setTimerActive(_activeTimer, true);
     });
   }
 
-  void _setTimerActive(CountDownController timerController, bool isActive) {
+  void _setTimerActive(TimerType timerType, bool isActive) {
+    final timerController = timerType == TimerType.light
+        ? _lightTimerController
+        : _darkTimerController;
+
     if (isActive) {
       timerController.resume();
     } else {

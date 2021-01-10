@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:chess_timer/ui/palette.dart';
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,6 +39,7 @@ class Timer extends StatelessWidget {
     final timerTextStyle = textTheme.headline2.copyWith(color: progressColor);
     final borderRadius = BorderRadius.circular(timerSize / 2);
     final elevation = isActive ? 30.0 : 0.0;
+    final buttonColor = _getButtonColor();
 
     return Container(
       color: colorTheme.getBackgroundColor(isActive),
@@ -48,7 +50,7 @@ class Timer extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: maxSize, maxWidth: maxSize),
           child: Material(
             elevation: elevation,
-            color: colorTheme.getButtonColor(isActive),
+            color: buttonColor,
             shape: RoundedRectangleBorder(
               borderRadius: borderRadius,
             ),
@@ -76,6 +78,16 @@ class Timer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getButtonColor() {
+    if (!isActive) return colorTheme.getButtonColor(isActive);
+
+    final timeInMilliseconds = controller.getTimeInMilliseconds();
+
+    return timeInMilliseconds == 0
+        ? Palette.red
+        : colorTheme.getButtonColor(isActive);
   }
 
   Future<void> _onTap() async {
