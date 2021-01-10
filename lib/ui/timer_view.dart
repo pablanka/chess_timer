@@ -22,6 +22,7 @@ class _TimerViewState extends State<TimerView> {
   TimerType _activeTimer;
   bool _timersFlipped = false;
   TimerButtonSound _timerButtonSound;
+  var _matchDuration = Duration(minutes: 1);
 
   @override
   void initState() {
@@ -172,10 +173,16 @@ class _TimerViewState extends State<TimerView> {
     );
   }
 
-  void _openSetTimerView() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => SetTimerView(),
-    ));
+  Future<void> _openSetTimerView() async {
+    final navigator = Navigator.of(context);
+    final newDuration = await navigator.push<Duration>(
+      MaterialPageRoute(builder: (context) {
+        return SetTimerView(selectedDuration: _matchDuration);
+      }),
+    );
+    if (newDuration == null) return;
+    _matchDuration = newDuration;
+    _resetTimers();
   }
 
   void _flipTimers() {
@@ -234,9 +241,9 @@ class _TimerViewState extends State<TimerView> {
     setState(() {
       _activeTimer = null;
       _matchStatus = MatchStatus.notStarted;
-      _lightTimerController.restart();
+      _lightTimerController.restart(duration: _matchDuration.inSeconds);
       _lightTimerController.pause();
-      _darkTimerController.restart();
+      _darkTimerController.restart(duration: _matchDuration.inSeconds);
       _darkTimerController.pause();
     });
   }
@@ -259,7 +266,7 @@ class _TimerViewState extends State<TimerView> {
       angle: pi,
       child: Timer(
         isActive: isActive,
-        duration: _getMatchDuration(),
+        duration: _matchDuration,
         colorTheme: lightTimerTheme,
         controller: _lightTimerController,
         onTap: _switchActive,
@@ -309,7 +316,7 @@ class _TimerViewState extends State<TimerView> {
       children: [
         Timer(
           isActive: isActive,
-          duration: _getMatchDuration(),
+          duration: _matchDuration,
           controller: _darkTimerController,
           colorTheme: darkTimerTheme,
           onTap: _switchActive,
@@ -326,10 +333,6 @@ class _TimerViewState extends State<TimerView> {
           ),
       ],
     );
-  }
-
-  Duration _getMatchDuration() {
-    return Duration(seconds: 5);
   }
 
   void _switchActive() {
