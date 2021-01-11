@@ -295,7 +295,7 @@ class _TimerViewState extends State<TimerView> {
       builder: (_) {
         return AlertDialog(
           title: Text('Match has finished'),
-          content: Text('Timer is over!'),
+          content: Text('Time is over!'),
           actions: [
             RaisedButton(
               child: Text('OK', style: TextStyle(color: Colors.white)),
